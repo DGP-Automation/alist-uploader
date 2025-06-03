@@ -1,6 +1,7 @@
 import * as http from '@actions/http-client'
 import * as core from '@actions/core'
 import * as fs from 'fs-extra'
+import {Readable} from 'stream';
 
 export class AlistClient {
     private readonly host: string;
@@ -43,15 +44,17 @@ export class AlistClient {
             }
         }
         const buf = await fs.readFile(filePath);
+        const stream = Readable.from(buf);
         const encoded_path = encodeURI(remote_path);
         const headers = {
             "Authorization": this.token,
             "Content-Type": MIMEType,
             "Content-Length": buf.length.toString(),
             "File-Path": encoded_path,
-            "As-Task": "false"
+            "As-Task": "true"
         }
-        const res = await this.client.put(this.getUrl("/api/fs/put"), buf.toString("binary"), headers);
+        // @ts-ignore
+        const res = await this.client.put(this.getUrl("/api/fs/put"), stream, headers);
         if (res.message.statusCode === 200) {
             core.info(`File ${remote_path} uploaded successfully.`);
             return await res.readBody().then(body => JSON.parse(body));
@@ -155,11 +158,14 @@ export class AlistClient {
     }
 
     private async getToken(): Promise<string> {
+        const headers = {
+            "Content-Type": "application/json"
+        }
         const body = {
             "username": this.username,
             "password": this.password
         }
-        const res = await this.client.post(this.getUrl("/api/auth/login"), JSON.stringify(body))
+        const res = await this.client.post(this.getUrl("/api/auth/login"), JSON.stringify(body), headers)
             .then(res => res.readBody())
             .then(res => JSON.parse(res));
 

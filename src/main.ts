@@ -20,7 +20,7 @@ async function run() {
     }
     let file_path = core.getInput("file_path", {required: true});
     let target_dir = core.getInput("target_dir", {required: true});
-    let overwrite = core.getInput("overwrite") === 'true';
+    let overwrite = core.getInput("overwrite") === "true";
 
     core.info("Starting Alist client with the following parameters:");
     core.info(`Host: ${host}`);
@@ -32,10 +32,10 @@ async function run() {
     const stats = await fs.stat(file_path);
     if (stats.isDirectory()) {
         core.info(`The provided file path is a directory: ${file_path}`);
-        core.info(await alistClient.upload_dir(file_path, target_dir, overwrite));
+        core.info(await alistClient.upload_dir(file_path, target_dir, overwrite).then(JSON.stringify));
     } else if (stats.isFile()) {
         core.info(`The provided file path is a file: ${file_path}`);
-        core.info(await alistClient.stream_upload(file_path, target_dir, overwrite));
+        core.info(await alistClient.stream_upload(file_path, target_dir, overwrite).then(JSON.stringify));
     } else {
         core.setFailed(`The provided file path is neither a file nor a directory: ${file_path}`);
         return;

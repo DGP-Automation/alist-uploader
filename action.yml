@@ -12,9 +12,9 @@ inputs:
     required: true
     default: ''
   overwrite:
-    description: 'Whether to overwrite the file if it already exists. Defaults to false.'
+    description: 'Whether to overwrite the file if it already exists. Defaults to true.'
     required: false
-    default: 'false'
+    default: 'true'
   host:
     description: 'The host of the Alist server. Or use the `ALIST_HOST` environment variable.'
     required: false

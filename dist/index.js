@@ -53,6 +53,7 @@ exports.AlistClient = void 0;
 const http = __importStar(__nccwpck_require__(787));
 const core = __importStar(__nccwpck_require__(9999));
 const fs = __importStar(__nccwpck_require__(1977));
+const stream_1 = __nccwpck_require__(2203);
 class AlistClient {
     constructor(host, username, password) {
         this.initialized = false;
@@ -89,15 +90,17 @@ class AlistClient {
                 }
             }
             const buf = yield fs.readFile(filePath);
+            const stream = stream_1.Readable.from(buf);
             const encoded_path = encodeURI(remote_path);
             const headers = {
                 "Authorization": this.token,
                 "Content-Type": MIMEType,
                 "Content-Length": buf.length.toString(),
                 "File-Path": encoded_path,
-                "As-Task": "false"
+                "As-Task": "true"
             };
-            const res = yield this.client.put(this.getUrl("/api/fs/put"), buf.toString("binary"), headers);
+            // @ts-ignore
+            const res = yield this.client.put(this.getUrl("/api/fs/put"), stream, headers);
             if (res.message.statusCode === 200) {
                 core.info(`File ${remote_path} uploaded successfully.`);
                 return yield res.readBody().then(body => JSON.parse(body));
@@ -210,11 +213,14 @@ class AlistClient {
     }
     getToken() {
         return __awaiter(this, void 0, void 0, function* () {
+            const headers = {
+                "Content-Type": "application/json"
+            };
             const body = {
                 "username": this.username,
                 "password": this.password
             };
-            const res = yield this.client.post(this.getUrl("/api/auth/login"), JSON.stringify(body))
+            const res = yield this.client.post(this.getUrl("/api/auth/login"), JSON.stringify(body), headers)
                 .then(res => res.readBody())
                 .then(res => JSON.parse(res));
             if (res.code === 200) {
@@ -309,7 +315,7 @@ function run() {
         }
         let file_path = core.getInput("file_path", { required: true });
         let target_dir = core.getInput("target_dir", { required: true });
-        let overwrite = core.getInput("overwrite") === 'true';
+        let overwrite = core.getInput("overwrite") === "true";
         core.info("Starting Alist client with the following parameters:");
         core.info(`Host: ${host}`);
         core.info(`Username: ${username}`);
@@ -318,11 +324,11 @@ function run() {
         const stats = yield fs.stat(file_path);
         if (stats.isDirectory()) {
             core.info(`The provided file path is a directory: ${file_path}`);
-            core.info(yield alistClient.upload_dir(file_path, target_dir, overwrite));
+            core.info(yield alistClient.upload_dir(file_path, target_dir, overwrite).then(JSON.stringify));
         }
         else if (stats.isFile()) {
             core.info(`The provided file path is a file: ${file_path}`);
-            core.info(yield alistClient.stream_upload(file_path, target_dir, overwrite));
+            core.info(yield alistClient.stream_upload(file_path, target_dir, overwrite).then(JSON.stringify));
         }
         else {
             core.setFailed(`The provided file path is neither a file nor a directory: ${file_path}`);
