@@ -1,0 +1,31 @@
+{
+  "name": "alist-uploader",
+  "version": "1.0.0",
+  "description": "A simple uploader for Alist",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DGP-Automation/alist-uploader.git"
+  },
+  "keywords": [
+    "alist",
+    "uploader",
+    "file upload"
+  ],
+  "author": "DGP Automation",
+  "license": "MIT",
+  "scripts": {
+    "build": "pnpm install && tsc && ncc build .\\lib\\main.js --license licenses.txt --license licenses.txt"
+  },
+  "dependencies": {
+    "@actions/core": "^1.11.1",
+    "@actions/glob": "^0.4.0",
+    "@actions/http-client": "^2.2.3",
+    "fs-extra": "^11.3.0"
+  },
+  "devDependencies": {
+    "@vercel/ncc": "^0.38.3",
+    "typescript": "^5.8.3",
+    "@types/fs-extra": "^11.0.4"
+  },
+  "packageManager": "pnpm@10.11.1+sha256.211e9990148495c9fc30b7e58396f7eeda83d9243eb75407ea4f8650fb161f7c"
+}

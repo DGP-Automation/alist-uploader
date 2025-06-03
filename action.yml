@@ -1,0 +1,30 @@
+name: 'Alist uploader'
+description: 'An action to upload files to Alist.'
+author: 'DGP-Automation'
+
+inputs:
+  file_path:
+    description: 'The path to the file to upload.'
+    required: true
+    default: ''
+  target_dir:
+    description: 'The target directory in Alist where the file will be uploaded.'
+    required: true
+    default: ''
+  overwrite:
+    description: 'Whether to overwrite the file if it already exists. Defaults to false.'
+    required: false
+    default: 'false'
+  host:
+    description: 'The host of the Alist server. Or use the `ALIST_HOST` environment variable.'
+    required: false
+  username:
+    description: 'The username for Alist authentication. Or use the `ALIST_USERNAME` environment variable.'
+    required: false
+  password:
+    description: 'The password for Alist authentication. Or use the `ALIST_PASSWORD` environment variable.'
+    required: false
+
+runs:
+  using: node20
+  main: dist/index.js
