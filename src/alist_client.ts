@@ -155,10 +155,11 @@ export class AlistClient {
     }
 
     private async getToken(): Promise<string> {
-        const res = await this.client.post(this.getUrl("/api/auth/login"), JSON.stringify({
+        const body = {
             "username": this.username,
             "password": this.password
-        }))
+        }
+        const res = await this.client.post(this.getUrl("/api/auth/login"), JSON.stringify(body))
             .then(res => res.readBody())
             .then(res => JSON.parse(res));
 

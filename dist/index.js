@@ -210,10 +210,11 @@ class AlistClient {
     }
     getToken() {
         return __awaiter(this, void 0, void 0, function* () {
-            const res = yield this.client.post(this.getUrl("/api/auth/login"), JSON.stringify({
+            const body = {
                 "username": this.username,
                 "password": this.password
-            }))
+            };
+            const res = yield this.client.post(this.getUrl("/api/auth/login"), JSON.stringify(body))
                 .then(res => res.readBody())
                 .then(res => JSON.parse(res));
             if (res.code === 200) {
