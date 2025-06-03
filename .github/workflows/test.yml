@@ -1,0 +1,19 @@
+name: Test
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          echo "test" > test.txt
+      - uses: DGP-Automation/alist-uploader@main
+        with:
+          file_path: test.txt
+          target_dir: ${{ secrets.ALIST_TARGET_DIR }}
+          overwrite: true
+        env:
+          ALIST_HOST: ${{ secrets.ALIST_HOST }}
+          ALIST_USERNAME: ${{ secrets.ALIST_USERNAME }}
+          ALIST_PASSWORD: ${{ secrets.ALIST_PASSWORD }}
