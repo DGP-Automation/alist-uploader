@@ -53,7 +53,6 @@ exports.AlistClient = void 0;
 const http = __importStar(__nccwpck_require__(787));
 const core = __importStar(__nccwpck_require__(9999));
 const fs = __importStar(__nccwpck_require__(1977));
-const stream_1 = __nccwpck_require__(2203);
 class AlistClient {
     constructor(host, username, password) {
         this.initialized = false;
@@ -89,13 +88,24 @@ class AlistClient {
                     }
                 }
             }
-            const buf = yield fs.readFile(filePath);
-            const stream = stream_1.Readable.from(buf);
+            const fileSize = yield fs.stat(filePath).then(stat => stat.size);
+            const stream = fs.createReadStream(filePath);
+            let uploadedBytes = 0;
+            let lastReportedProgress = 0;
+            const progressInterval = 10;
+            stream.on('data', (chunk) => {
+                uploadedBytes += chunk.length;
+                const progress = Math.floor((uploadedBytes / fileSize) * 100);
+                if (progress - lastReportedProgress >= progressInterval || progress === 100) {
+                    core.info(`Upload progress: ${progress}% (${uploadedBytes}/${fileSize} bytes)`);
+                    lastReportedProgress = progress;
+                }
+            });
             const encoded_path = encodeURI(remote_path);
             const headers = {
                 "Authorization": this.token,
                 "Content-Type": MIMEType,
-                "Content-Length": buf.length.toString(),
+                "Content-Length": fileSize.toString(),
                 "File-Path": encoded_path,
                 "As-Task": "true"
             };
@@ -298,41 +308,47 @@ const alist_client_1 = __nccwpck_require__(1047);
 const fs = __importStar(__nccwpck_require__(1977));
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
-        let host = core.getInput('host') || process.env.ALIST_HOST || '';
-        if (!host) {
-            core.setFailed('Host is required. Please set the host input or ALIST_HOST environment variable.');
-            return;
+        try {
+            let host = core.getInput('host') || process.env.ALIST_HOST || '';
+            if (!host) {
+                core.setFailed('Host is required. Please set the host input or ALIST_HOST environment variable.');
+                return;
+            }
+            let username = core.getInput('username') || process.env.ALIST_USERNAME || '';
+            if (!username) {
+                core.setFailed('Username is required. Please set the username input or ALIST_USERNAME environment variable.');
+                return;
+            }
+            let password = core.getInput('password') || process.env.ALIST_PASSWORD || '';
+            if (!password) {
+                core.setFailed('Password is required. Please set the password input or ALIST_PASSWORD environment variable.');
+                return;
+            }
+            let file_path = core.getInput("file_path", { required: true });
+            let target_dir = core.getInput("target_dir", { required: true });
+            let overwrite = core.getInput("overwrite") === "true";
+            core.info("Starting Alist client with the following parameters:");
+            core.info(`Host: ${host}`);
+            core.info(`Username: ${username}`);
+            const alistClient = new alist_client_1.AlistClient(host, username, password);
+            yield alistClient.init();
+            const stats = yield fs.stat(file_path);
+            if (stats.isDirectory()) {
+                core.info(`The provided file path is a directory: ${file_path}`);
+                core.info(yield alistClient.upload_dir(file_path, target_dir, overwrite).then(JSON.stringify));
+            }
+            else if (stats.isFile()) {
+                core.info(`The provided file path is a file: ${file_path}`);
+                core.info(yield alistClient.stream_upload(file_path, target_dir, overwrite).then(JSON.stringify));
+            }
+            else {
+                core.setFailed(`The provided file path is neither a file nor a directory: ${file_path}`);
+                return;
+            }
         }
-        let username = core.getInput('username') || process.env.ALIST_USERNAME || '';
-        if (!username) {
-            core.setFailed('Username is required. Please set the username input or ALIST_USERNAME environment variable.');
-            return;
-        }
-        let password = core.getInput('password') || process.env.ALIST_PASSWORD || '';
-        if (!password) {
-            core.setFailed('Password is required. Please set the password input or ALIST_PASSWORD environment variable.');
-            return;
-        }
-        let file_path = core.getInput("file_path", { required: true });
-        let target_dir = core.getInput("target_dir", { required: true });
-        let overwrite = core.getInput("overwrite") === "true";
-        core.info("Starting Alist client with the following parameters:");
-        core.info(`Host: ${host}`);
-        core.info(`Username: ${username}`);
-        const alistClient = new alist_client_1.AlistClient(host, username, password);
-        yield alistClient.init();
-        const stats = yield fs.stat(file_path);
-        if (stats.isDirectory()) {
-            core.info(`The provided file path is a directory: ${file_path}`);
-            core.info(yield alistClient.upload_dir(file_path, target_dir, overwrite).then(JSON.stringify));
-        }
-        else if (stats.isFile()) {
-            core.info(`The provided file path is a file: ${file_path}`);
-            core.info(yield alistClient.stream_upload(file_path, target_dir, overwrite).then(JSON.stringify));
-        }
-        else {
-            core.setFailed(`The provided file path is neither a file nor a directory: ${file_path}`);
-            return;
+        catch (error) {
+            // @ts-ignore
+            core.setFailed(`Action failed with error: ${error.message}`);
         }
     });
 }
