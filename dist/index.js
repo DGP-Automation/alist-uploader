@@ -90,8 +90,12 @@ class AlistClient {
                 core.info(`File ${remote_path} exists. Removing existing file before upload.`);
                 const delete_res = yield this.delete_file([filename], targetDir);
                 if (delete_res && delete_res.code !== 200) {
-                    core.warning(`Failed to delete existing file ${remote_path}: ${delete_res.message}`);
+                    core.error(`Failed to delete existing file ${remote_path}: ${delete_res.message}`);
+                    throw new Error(`Failed to delete existing file: ${delete_res.message}`);
                 }
+                core.info(`Existing file ${remote_path} removed successfully.`);
+                core.info("Sleeping for 3 seconds to sync the deletion...");
+                yield new Promise(resolve => setTimeout(resolve, 3000));
             }
             const fileSize = yield fs.stat(filePath).then(stat => stat.size);
             const stream = fs.createReadStream(filePath);
