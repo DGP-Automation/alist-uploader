@@ -156,7 +156,7 @@ export class AlistClient {
             "Content-Type": "application/json"
         }
         const body = {
-            "name": filename,
+            "names": filename,
             "dir": target_dir
         }
         return await this.client.post(this.getUrl("/api/fs/remove"), JSON.stringify(body), headers)
