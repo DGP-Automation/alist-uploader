@@ -88,7 +88,10 @@ class AlistClient {
                     }
                 }
                 core.info(`File ${remote_path} exists. Removing existing file before upload.`);
-                yield this.delete_file([filename], targetDir);
+                const delete_res = yield this.delete_file([filename], targetDir);
+                if (delete_res && delete_res.code !== 200) {
+                    core.warning(`Failed to delete existing file ${remote_path}: ${delete_res.message}`);
+                }
             }
             const fileSize = yield fs.stat(filePath).then(stat => stat.size);
             const stream = fs.createReadStream(filePath);
