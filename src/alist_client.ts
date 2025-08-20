@@ -32,16 +32,21 @@ export class AlistClient {
         const filename = filePath.split('/').pop() || '';
         const MIMEType = 'application/octet-stream';
         const remote_path = `${targetDir}/${filename}`;
-        if (!overwrite) {
-            const metadata = await this.fetch_metadata(remote_path);
-            if (metadata && metadata.code === 200) {
+
+        const metadata = await this.fetch_metadata(remote_path);
+        if (metadata && metadata.code === 200) {
+            if (!overwrite) {
                 const local_file_size = await fs.stat(filePath).then(s => s.size);
                 if (metadata.data.size === local_file_size) {
                     core.info(`File ${remote_path} already exists. Skipping upload.`);
                     return {"code": 204, "message": "File already exist, skip as user defined setting."}
                 }
             }
+
+            core.info(`File ${remote_path} exists. Removing existing file before upload.`);
+            await this.delete_file([filename], targetDir);
         }
+
 
         const fileSize = await fs.stat(filePath).then(stat => stat.size);
         const stream = fs.createReadStream(filePath);
